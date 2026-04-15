@@ -12,20 +12,22 @@ The project has
 
 ```mermaid
 graph TD
-    A[my_project] --> B[src]
-    B --> C[my_project]
+    A[my_project]
+    A --> B[data/FinancialPhraseBank]
+    A --> C[src/my_project]
+    A --> D[README.md]
 
-    C --> D[CNN.py]
-    C --> E[FFNN.py]
-    C --> F[KNN.py]
-    C --> G[Models.py]
-    C --> H[PCA.py]
-    C --> I[RNN.py]
-    C --> J[SVM.py]
-    C --> K[data_loader.py]
-    C --> L[finBERT.py]
-    C --> M[README.md]
+    B --> E[Sentence Data]
 
+    C --> F[CNN.py]
+    C --> G[FFNN.py]
+    C --> H[KNN.py]
+    C --> I[Models.py]
+    C --> J[PCA.py]
+    C --> K[RNN.py]
+    C --> L[SVM.py]
+    C --> M[data_loader.py]
+    C --> N[finBERT.py]
 ```
 ## Download Requirements
 
