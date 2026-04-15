@@ -8,31 +8,46 @@ This project looked at methods to deal with the high-dimensional issues faced wh
 
 ## Structure
 
-The project has 
-
 ```mermaid
-graph TD
+flowchart TD
     A[my_project]
-    A --> B[data/FinancialPhraseBank]
-    A --> C[src/my_project]
-    A --> D[README.md]
 
-    B --> E[Sentence Data]
+    subgraph D[data]
+        B[FinancialPhraseBank]
+        C[Sentence Data]
+        B --> C
+    end
 
-    C --> F[CNN.py]
-    C --> G[FFNN.py]
-    C --> H[KNN.py]
-    C --> I[Models.py]
-    C --> J[PCA.py]
-    C --> K[RNN.py]
-    C --> L[SVM.py]
-    C --> M[data_loader.py]
-    C --> N[finBERT.py]
+    subgraph S[src/my_project]
+        subgraph M[Models]
+            D1[CNN.py]
+            D2[FFNN.py]
+            D3[KNN.py]
+            D4[RNN.py]
+            D5[SVM.py]
+            D6[finBERT.py]
+        end
+
+        subgraph U[Utilities]
+            E1[Models.py]
+            E2[data_loader.py]
+            E3[PCA.py]
+        end
+    end
+
+    F[README.md]
+
+    A --> D
+    A --> S
+    A --> F
+
 ```
+
+
 ## Download Requirements
 
-This project uses the Financial Phrasebank as its dataset to evaluate the different classifiers. This can be downloaded from [HuggingFace](https://huggingface.co/datasets/takala/financial_phrasebank). 
+This project uses the Financial Phrasebank as its dataset to evaluate the different classifiers. This can be downloaded from [HuggingFace](https://huggingface.co/datasets/takala/financial_phrasebank). For seemless integration, replace the file Sentence Data, with the datasets.
 
-This project also uses Google's word2vec vectors, with information on how to download them [here](https://github.com/harmanpreet93/load-word2vec-google).
+This project also uses Google's word2vec vectors, with information [here](https://github.com/harmanpreet93/load-word2vec-google).
 
-This project also uses FinBERT, available to download from [here](https://huggingface.co/ProsusAI/finbert).
+This project also uses FinBERT, with more information [here](https://huggingface.co/ProsusAI/finbert).
