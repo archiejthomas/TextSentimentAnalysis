@@ -8,8 +8,25 @@ This project looked at methods to deal with the high-dimensional issues faced wh
 
 ## Structure
 
+The project has 
 
+```mermaid
+graph TD
+    A[my_project] --> B[src]
+    B --> C[my_project]
 
+    C --> D[CNN.py]
+    C --> E[FFNN.py]
+    C --> F[KNN.py]
+    C --> G[Models.py]
+    C --> H[PCA.py]
+    C --> I[RNN.py]
+    C --> J[SVM.py]
+    C --> K[data_loader.py]
+    C --> L[finBERT.py]
+    C --> M[README.md]
+
+```
 ## Download Requirements
 
 This project uses the Financial Phrasebank as its dataset to evaluate the different classifiers. This can be downloaded from [HuggingFace](https://huggingface.co/datasets/takala/financial_phrasebank). 
