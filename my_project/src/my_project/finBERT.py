@@ -8,19 +8,49 @@ Created on Fri Jan 23 15:08:13 2026
 THIS REQUIRES A DIFFERENT ENVIRONEMNT TO THE REST OF THE PROJECT
 
 """
+
+
+import numpy as np
+
+import random
+
+from transformers import BertTokenizer, BertForSequenceClassification
+
+import torch
+from torch.utils.data import DataLoader, TensorDataset
+from torch.optim import AdamW
+
+from transformers import get_linear_schedule_with_warmup
+
+from sklearn.model_selection import StratifiedKFold
+from sklearn.metrics import f1_score, confusion_matrix, ConfusionMatrixDisplay
+
+import matplotlib.pyplot as plt
+
+from src.my_project.data_loader import load_data
+
 import os
-from transformers import pipeline
-import pandas as pd
+import pandas as pd 
+import gensim.downloader as api
+import numpy as np
+from sklearn.preprocessing import LabelEncoder
 
-# Load FinBERT for financial 3-class sentiment (positive/neutral/negative)
-model = pipeline("sentiment-analysis", 
-                 model="yiyanghkust/finbert-tone",
-                 return_all_scores=True)  # Get probs for all classes
+"""-------------------- Loading data and tokenizer ------------------------"""
 
-# Test it
-test_sentence = "The bank reported strong earnings growth this quarter."
-result = model(test_sentence)
-print(result)
+
+tokenizer = BertTokenizer.from_pretrained('ProsusAI/finbert')
+
+device = torch.device("cpu")
+
+data = load_data(50)
+df = data['data']
+
+sentences = df.iloc[:, 0].values
+y = df.iloc[:, 2].values
+
+
+"""------------------------- Functions -----------------------------------"""
+
 
 def load_data(level = 100, verbose = True):
     
@@ -51,6 +81,11 @@ def load_data(level = 100, verbose = True):
     positives = df.query('label == "positive"')
     negatives = df.query('label == "negative"')
     
+    le = LabelEncoder()
+    y_encoded = le.fit_transform(df["label"])
+    
+    df["y"] = y_encoded
+    
     if verbose:
         print("---------------------\n", level, " Agree","\nTotal:", df.shape[0], 
               "\nPositives:", positives.shape[0],
@@ -66,52 +101,7 @@ def load_data(level = 100, verbose = True):
         }
     
     return data
-
-
-data = load_data(100)["data"]
-
-preds = model(data["sentence"].tolist(),
-              batch_size = 16)
-
-data['Finbert'] = [max(p, key=lambda x: x['score'])['label'].lower() for p in preds]
-
-data['score'] = (data['label'] == data['Finbert']).astype(int)
-
-print(sum(data['score'])/len(data['score']))
-
-
-
-
-
-import numpy as np
-
-import random
-
-from transformers import BertTokenizer, BertForSequenceClassification
-
-import torch
-from torch.utils.data import DataLoader, TensorDataset
-from torch.optim import AdamW
-
-from transformers import get_linear_schedule_with_warmup
-
-from sklearn.model_selection import StratifiedKFold
-from sklearn.metrics import f1_score, confusion_matrix, ConfusionMatrixDisplay
-
-import matplotlib.pyplot as plt
-
-from src.my_project.data_loader import load_data
-
-
-tokenizer = BertTokenizer.from_pretrained('ProsusAI/finbert')
-
-data = load_data(100)
-df = data['data']
-
-sentences = df.iloc[:, 0].values
-y = df.iloc[:, 2].values
-
-"""------------------------- Functions -----------------------------------"""
+    
 
 def tokenize_data(sentences, tokenizer, max_length=81):
     encodings = tokenizer(
@@ -144,7 +134,7 @@ def train_epoch(model, loader, optimiser, scheduler, device):
         )
         loss = outputs.loss
         loss.backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)  # prevents exploding gradients
+        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)  
         optimiser.step()
         scheduler.step()
         total_loss += loss.item()
@@ -163,12 +153,16 @@ def evaluate(model, loader, device):
             all_labels.extend(labels.cpu().numpy())
     return np.array(all_preds), np.array(all_labels)
 
-# ── Nested cross-validation ───────────────────────────────────────────────────
+
+
+"""------------------------- Train and Evaluate ----------------------------"""
+
+
 scores = []
 f1_scores = []
 all_preds = []
 all_true = []
-seeds = [354, 67, 42, 6, 93]
+#seeds = [354, 67, 42, 6, 93]
 seeds = [354]
 j = 0
 
@@ -181,20 +175,20 @@ for seed in seeds:
 
     for train_idx, test_idx in outer_cv.split(sentences, y):
         j += 1
-        print(f"{j} out of 25")
+        print(f"{j} out of 5")
 
         sentences_train = sentences[train_idx]
-        sentences_test  = sentences[test_idx]
-        y_train         = y[train_idx]
-        y_test          = y[test_idx]
+        sentences_test = sentences[test_idx]
+        y_train = y[train_idx]
+        y_test = y[test_idx]
 
-        # tokenise
+        
         train_encodings = tokenize_data(sentences_train, tokenizer)
-        test_encodings  = tokenize_data(sentences_test,  tokenizer)
+        test_encodings = tokenize_data(sentences_test,  tokenizer)
 
-        # dataloaders
+        
         train_loader = make_dataloader(train_encodings, y_train, batch_size=16, shuffle=True)
-        test_loader  = make_dataloader(test_encodings,  y_test,  batch_size=16, shuffle=False)
+        test_loader = make_dataloader(test_encodings,  y_test,  batch_size=16, shuffle=False)
 
 
         model = BertForSequenceClassification.from_pretrained(
@@ -204,21 +198,21 @@ for seed in seeds:
         )
         model.to(device)
 
-        # optimiser and scheduler
+
         optimiser = AdamW(model.parameters(), lr=2e-5, weight_decay=0.01)
-        total_steps = len(train_loader) * 3   # 3 epochs
+        total_steps = len(train_loader) * 3   
         scheduler = get_linear_schedule_with_warmup(
             optimiser,
-            num_warmup_steps=int(0.1 * total_steps),  # 10% warmup
+            num_warmup_steps=int(0.1 * total_steps),  
             num_training_steps=total_steps
         )
 
-        # train for 3 epochs
+        
         for epoch in range(3):
             loss = train_epoch(model, train_loader, optimiser, scheduler, device)
-            print(f"  Epoch {epoch+1}/3 — loss: {round(loss, 4)}")
+    
 
-        # evaluate
+
         y_pred, _ = evaluate(model, test_loader, device)
 
         acc = np.mean(y_pred == y_test)
@@ -228,9 +222,8 @@ for seed in seeds:
         all_preds.extend(y_pred)
         all_true.extend(y_test)
 
-        # free GPU memory between folds
-        del model
-        torch.cuda.empty_cache()
+
+
 
 # ── Summary metrics ───────────────────────────────────────────────────────────
 mean_acc = np.mean(scores)
@@ -254,3 +247,17 @@ for text in ax.texts:
 plt.tight_layout()
 plt.savefig('confusion_matrix_finbert.png', dpi=300, bbox_inches='tight')
 plt.show()
+
+
+model = BertForSequenceClassification.from_pretrained(
+    'ProsusAI/finbert',
+    num_labels=3,
+    ignore_mismatched_sizes=True
+)
+
+total_params = sum(p.numel() for p in model.parameters())
+trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+print(f"Total parameters:     {total_params:,}")
+print(f"Trainable parameters: {trainable_params:,}")
+print(f"Non-trainable:        {total_params - trainable_params:,}")

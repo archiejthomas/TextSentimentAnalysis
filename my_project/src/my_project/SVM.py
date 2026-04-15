@@ -135,7 +135,7 @@ for seed in seeds:
 
 
         param_grid = {
-            'pca__n_components': [3],  # you can adjust
+            'pca__n_components': [300],  
             'svm__C': [0.1, 1, 10, 100]
         }
 
@@ -191,7 +191,7 @@ for text in ax.texts:
     text.set_fontsize(20)
 #ax.set_title('Aggregated Confusion Matrix — CNN 3 Kernel (100% Agreement)')
 plt.tight_layout()
-plt.savefig('confusion_matrix_SVM4.png', dpi=300, bbox_inches='tight')
+plt.savefig('confusion_matrix_SVM5.png', dpi=300, bbox_inches='tight')
 plt.show()
 
 
@@ -204,8 +204,7 @@ Z = KNNprepData(df)
 X_raw = Z[0]  
 y = Z[1]
 
-# --- TSNE fit on full dataset before any splitting ---
-# Note: this introduces mild data leakage 
+
 
 tsne = TSNE(
     n_components=3,       
@@ -353,7 +352,7 @@ for seed in seeds:
 
 
         param_grid = {
-            'pca__n_components': [300],  # you can adjust
+            'pca__n_components': [300],  
             'svm__C': [0.1, 1, 10, 100]
         }
 
@@ -425,8 +424,6 @@ Z = KNNprepDataLong(df)
 X_raw = Z[0]  
 y = Z[1]
 
-# --- TSNE fit on full dataset before any splitting ---
-# Note: this introduces mild data leakage 
 
 tsne = TSNE(
     n_components=3,       
@@ -578,7 +575,7 @@ for seed in seeds:
         param_grid = {
             'pca__n_components': [300],
             'svm__C': [0.1, 1, 10, 100],
-            'svm__gamma': ['scale', 'auto']  # key parameter for RBF kernel
+            'svm__gamma': ['scale', 'auto']  
         }
 
 
@@ -648,8 +645,6 @@ Z = KNNprepData(df)
 X_raw = Z[0]  
 y = Z[1]
 
-# --- TSNE fit on full dataset before any splitting ---
-# Note: this introduces mild data leakage 
 
 tsne = TSNE(
     n_components=3,       
@@ -695,7 +690,7 @@ for seed in seeds:
         
         param_grid = {
             'svm__C': [0.1, 1, 10, 100],
-            'svm__gamma': ['scale', 'auto']  # key parameter for RBF kernel
+            'svm__gamma': ['scale', 'auto']  
         }
         inner_cv = StratifiedKFold(
             n_splits=3,
@@ -838,7 +833,7 @@ std_f1 = np.std(f1_scores)
 
 print("Test Accuracy: ",[round(mean_acc*100,2), round(std_acc*100,2)])
 print("F1 Score: ",[round(mean_f1*100,2), round(std_f1*100,2)]) 
-
+ 
 
 # ------ Aggregated Confusion Matrix ------------------------------------------
 
@@ -854,4 +849,5 @@ for text in ax.texts:
 plt.tight_layout()
 plt.savefig('confusion_matrix_svm10.png', dpi=300, bbox_inches='tight')
 plt.show()
+
 

@@ -219,8 +219,7 @@ Z = KNNprepDataLong(df)
 X_raw = Z[0]  
 y = Z[1]
 
-# --- TSNE fit on full dataset before any splitting ---
-# Note: this introduces mild data leakage 
+
 
 tsne = TSNE(
     n_components=3,       
@@ -424,8 +423,7 @@ Z = KNNprepData(df)
 X_raw = Z[0]  
 y = Z[1]
 
-# --- TSNE fit on full dataset before any splitting ---
-# Note: this introduces mild data leakage 
+
 
 tsne = TSNE(
     n_components=3,       
