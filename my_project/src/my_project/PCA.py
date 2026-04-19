@@ -115,85 +115,77 @@ pairedPCA(present, past, "PCA: Present vs Past")
 """------------------------------------------------------------------------"""
 
 
-def expand_sentences(split, data):
-    length = data.shape[0]
-    n = int(np.floor(length*split))
-    
-    train_index = np.random.choice(length, size=n, replace=False)
-    test_index = np.setdiff1d(np.arange(length), train_index)
-    
-    train_sents = data.iloc[train_index, 0].str.lower().tolist()
-    test_sents = data.iloc[test_index, 0].str.lower().tolist()
-    
-    train_tokens = [word_tokenize(sent) for sent in train_sents]
-    X_train = [[embeddings[w] if w in embeddings else np.zeros(300) 
-                for w in tokens] for tokens in train_tokens]
-   
-    
-    test_tokens = [word_tokenize(sent) for sent in test_sents]
-    X_test = [[embeddings[w] if w in embeddings else np.zeros(300) 
-                for w in tokens] for tokens in test_tokens]
-    
-    y = data.iloc[train_index,1].values
-    ytest = data.iloc[test_index,1].values
-    
-    le = LabelEncoder()
-    y_encoded = le.fit_transform(y)  
-    ytest_encoded = le.transform(ytest)
-
-    
-    return X_train, X_test, y_encoded, ytest_encoded
-
-
-X_train, X_test, y_train, y_test = expand_sentences(0.6,dataset)
-X_train = pad_sequences(X_train, maxlen = 30, dtype = 'float32')
-X_test= pad_sequences(X_test, maxlen = 30, dtype = 'float32')
-X_train_flat = X_train.reshape(X_train.shape[0], -1)
-X_test_flat = X_test.reshape(X_test.shape[0], -1)
 
 
 
-print(X_test)
 
 
 
-X = np.array([embeddings[_] for _ in present])
+def sentence_vector_long(tokens, max_words=81):
+    vectors = [embeddings[w] for w in tokens if w in embeddings]
+    vectors = vectors[:max_words]
+    while len(vectors) < max_words:
+        vectors.append(np.zeros(300))
+    return np.concatenate(vectors, axis=0)
 
-pca = PCA().fit(X_train_flat)
+
+def multi_sentence_vector_long(sentences):
+    n = len(sentences)
+    X = []
+    for i in range(n):
+        X.append(sentence_vector_long(sentences[i]))
+    return np.array(X)
+
+
+def KNNprepDataLong(df):
+    length = df.shape[0]
+    tokenized_sentences = [word_tokenize(sent.lower()) for sent in df.iloc[:, 0]]
+    y = df.iloc[:, 2].values
+    X = multi_sentence_vector_long([tokenized_sentences[i] for i in range(length)])
+    return [X, y]
+
+
+
+def sentence_vector(tokens):
+    vectors = [embeddings[w] for w in tokens if w in embeddings]
+    return np.mean(vectors, axis=0) if vectors else np.zeros(300)
+
+
+def multi_sentence_vector(sentences):
+    n = len(sentences)
+    X = []
+    for i in range(n):
+        X.append(sentence_vector(sentences[i]))
+    return np.array(X)
+
+
+def KNNprepData(df):
+    length = df.shape[0]
+    tokenized_sentences = [word_tokenize(sent.lower()) for sent in df.iloc[:, 0]]
+    y = df.iloc[:, 2].values
+    X = multi_sentence_vector([tokenized_sentences[i] for i in range(length)])
+    return [X, y]
+
+
+
+
+Xlong,ylong = KNNprepDataLong(df)
+Xshort,yshort = KNNprepData(df)
+
+
+
+
+
+pca = PCA().fit(Xshort)
 plt.figure()
 plt.plot(np.cumsum(pca.explained_variance_ratio_))
 plt.xlabel('Number of  Principle Components')
-plt.ylabel('Variance (%)') #for each component
-plt.title('Dataset Explained Variance')
+plt.ylabel('Variance (%)') 
+plt.title('Sentence Embeddings Explained Variance')
 plt.show()
 
 
 
-pca = PCA(n_components=300)
-#scaler = StandardScaler()
-#X_train_flat = scaler.fit_transform(X_train_flat)
-#X_test_flat = scaler.transform(X_test_flat)
-principal_components = pca.fit_transform(X_train_flat)
-principal_df = pd.DataFrame(data=principal_components, columns=['PC1', 'PC2'])
-
-cmap = ['red','blue','green']
-
-plt.scatter(principal_df['PC1'], principal_df['PC2'],s=2, c=y_train, cmap=matplotlib.colors.ListedColormap(cmap))
-
-
-
-kpca = KernelPCA(
-    n_components=2,        # Target dims (or None for max possible)
-    kernel='linear',           # 'rbf', 'poly', 'sigmoid', 'cosine', 'linear'           # Tune for RBF: 1/n_features or 'scale'/'auto'
-    alpha=1e-5             # Ridge regularization (helps stability
-)
-
-principal_components = kpca.fit_transform(X_train_flat)
-principal_df = pd.DataFrame(data=principal_components, columns=['PC1', 'PC2'])
-
-cmap = ['red','blue','green']
-
-plt.scatter(principal_df['PC1'], principal_df['PC2'],s=2, c=y_train, cmap=matplotlib.colors.ListedColormap(cmap))
 
 
 
